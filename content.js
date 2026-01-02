@@ -48,7 +48,7 @@
   /**
    * Extract manga info from the current page
    */
-  function extractMangaInfo() {
+  async function extractMangaInfo() {
     // Title - extract from <title> tag (format: "Manga Name - Rawkuma")
     let title = 'Unknown';
     const titleEl = document.querySelector('title');
@@ -56,38 +56,88 @@
       title = titleEl.textContent.replace(/\s*-\s*Rawkuma\s*$/i, '').trim();
     }
 
-    // Thumbnail
-    const thumbnailEl = document.querySelector('article img[alt]');
-    const thumbnail = thumbnailEl?.src || '';
+    // Thumbnail - use og:image meta tag (more reliable)
+    let thumbnail = '';
+    const ogImage = document.querySelector('meta[property="og:image"]');
+    if (ogImage) {
+      thumbnail = ogImage.getAttribute('content') || '';
+    } else {
+      const thumbnailEl = document.querySelector('article img[alt]');
+      thumbnail = thumbnailEl?.src || '';
+    }
 
-    // Latest chapter - extract from first chapter link URL
-    const chapterLinks = document.querySelectorAll('a[href*="/chapter-"]');
+    // Extract manga_id from page for API call
+    let mangaId = null;
+    const scripts = document.querySelectorAll('script, a[href*="manga_id"]');
+    const pageHtml = document.documentElement.innerHTML;
+    const mangaIdMatch = pageHtml.match(/manga_id[=:](\d+)/);
+    if (mangaIdMatch) {
+      mangaId = mangaIdMatch[1];
+    }
+
     let latestChapter = '';
     let latestChapterNum = 0;
     let latestChapterUrl = '';
+    let lastUpdated = '';
 
-    if (chapterLinks.length > 0) {
-      const firstChapterLink = chapterLinks[0];
-      latestChapterUrl = firstChapterLink.href;
+    // Try to get chapter info from API
+    if (mangaId) {
+      try {
+        const apiUrl = `https://rawkuma.net/wp-admin/admin-ajax.php?manga_id=${mangaId}&page=1&action=chapter_list`;
+        const response = await fetch(apiUrl);
+        if (response.ok) {
+          const chapterHtml = await response.text();
 
-      // Extract chapter number from URL - only the integer before the dot
-      // URL format: /chapter-NUMBER.ID/ (e.g., chapter-185.12345/)
-      const chapterNumMatch = latestChapterUrl.match(/\/chapter-(\d+)/i);
-      if (chapterNumMatch) {
-        latestChapterNum = parseInt(chapterNumMatch[1], 10);
-        latestChapter = `Chapter ${chapterNumMatch[1]}`;
+          // Extract first (latest) chapter number from data-chapter-number attribute
+          const chapterNumMatch = chapterHtml.match(/data-chapter-number=["'](\d+)["']/);
+          if (chapterNumMatch) {
+            latestChapterNum = parseInt(chapterNumMatch[1], 10);
+            latestChapter = `Chapter ${chapterNumMatch[1]}`;
+          }
+
+          // Extract chapter URL
+          const chapterUrlMatch = chapterHtml.match(/href=["']([^"']*\/chapter-[^"']*)["']/);
+          if (chapterUrlMatch) {
+            latestChapterUrl = chapterUrlMatch[1].trim();
+            if (!latestChapterUrl.startsWith('http')) {
+              latestChapterUrl = `https://rawkuma.net${latestChapterUrl}`;
+            }
+          }
+
+          // Extract last updated time from first chapter
+          const timeMatch = chapterHtml.match(/<time[^>]*>([^<]+)<\/time>/);
+          if (timeMatch) {
+            lastUpdated = timeMatch[1].trim();
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch chapter list:', error);
       }
     }
 
-    // Last updated
-    let lastUpdated = '';
-    const allElements = document.querySelectorAll('*');
-    for (const el of allElements) {
-      if (el.textContent?.trim() === 'Last Updates') {
-        const nextEl = el.nextElementSibling;
-        if (nextEl) {
-          lastUpdated = nextEl.textContent?.trim() || '';
-          break;
+    // Fallback: try DOM-based extraction
+    if (!latestChapterNum) {
+      // Check for chapter list container with data-chapter-number
+      const chapterElements = document.querySelectorAll('[data-chapter-number]');
+      if (chapterElements.length > 0) {
+        const firstChapter = chapterElements[0];
+        latestChapterNum = parseInt(firstChapter.dataset.chapterNumber, 10);
+        latestChapter = `Chapter ${latestChapterNum}`;
+
+        const chapterLink = firstChapter.querySelector('a[href*="/chapter-"]');
+        if (chapterLink) {
+          latestChapterUrl = chapterLink.href;
+        }
+      } else {
+        // Final fallback: use chapter links
+        const chapterLinks = document.querySelectorAll('a[href*="/chapter-"]');
+        if (chapterLinks.length > 0) {
+          latestChapterUrl = chapterLinks[0].href;
+          const numMatch = latestChapterUrl.match(/\/chapter-(\d+)/i);
+          if (numMatch) {
+            latestChapterNum = parseInt(numMatch[1], 10);
+            latestChapter = `Chapter ${numMatch[1]}`;
+          }
         }
       }
     }
@@ -194,7 +244,7 @@
         showToast('Removed from tracking list', 'info');
       } else {
         // Register
-        const mangaInfo = extractMangaInfo();
+        const mangaInfo = await extractMangaInfo();
         await chrome.runtime.sendMessage({
           type: 'REGISTER_MANGA',
           manga: mangaInfo
