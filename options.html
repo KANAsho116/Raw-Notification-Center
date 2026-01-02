@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - Raw Notification Center</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #e0e0e0;
+      background: #1a1a2e;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      color: #ff6b35;
+      margin-bottom: 24px;
+    }
+
+    h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #2d2d44;
+    }
+
+    .section {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #2d2d44;
+    }
+
+    .setting-row:last-child {
+      border-bottom: none;
+    }
+
+    .setting-label {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .setting-label span {
+      font-weight: 500;
+      color: #fff;
+    }
+
+    .setting-label small {
+      color: #808080;
+      font-size: 12px;
+    }
+
+    select {
+      padding: 8px 12px;
+      background: #1a1a2e;
+      border: 1px solid #3d3d5c;
+      border-radius: 6px;
+      color: #e0e0e0;
+      font-size: 14px;
+      cursor: pointer;
+      min-width: 150px;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #ff6b35;
+    }
+
+    .toggle {
+      position: relative;
+      width: 48px;
+      height: 26px;
+    }
+
+    .toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #3d3d5c;
+      border-radius: 26px;
+      transition: 0.3s;
+    }
+
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+
+    .toggle input:checked + .toggle-slider {
+      background: #ff6b35;
+    }
+
+    .toggle input:checked + .toggle-slider::before {
+      transform: translateX(22px);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+
+    .btn-secondary {
+      background: #2d2d44;
+      color: #e0e0e0;
+    }
+
+    .btn-secondary:hover {
+      background: #3d3d5c;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      display: none;
+    }
+
+    .status.success {
+      display: block;
+      background: rgba(76, 175, 80, 0.2);
+      color: #4caf50;
+      border: 1px solid rgba(76, 175, 80, 0.3);
+    }
+
+    .status.error {
+      display: block;
+      background: rgba(220, 53, 69, 0.2);
+      color: #dc3545;
+      border: 1px solid rgba(220, 53, 69, 0.3);
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .info {
+      margin-top: 16px;
+      padding: 12px;
+      background: #1a1a2e;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #808080;
+    }
+
+    .info strong {
+      color: #a0a0a0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Settings</h1>
+
+    <!-- Check Interval -->
+    <div class="section">
+      <h2>Update Checking</h2>
+      <div class="setting-row">
+        <div class="setting-label">
+          <span>Check Interval</span>
+          <small>How often to check for new chapters</small>
+        </div>
+        <select id="check-interval">
+          <option value="30">Every 30 minutes</option>
+          <option value="60">Every 1 hour</option>
+          <option value="120">Every 2 hours</option>
+          <option value="180">Every 3 hours</option>
+          <option value="360">Every 6 hours</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">
+          <span>Desktop Notifications</span>
+          <small>Show notifications when new chapters are found</small>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="notifications-enabled">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Data Management -->
+    <div class="section">
+      <h2>Data Management</h2>
+      <p style="color: #808080; margin-bottom: 16px;">Export your library and settings to a JSON file, or import from a previous backup.</p>
+      <div class="btn-group">
+        <button class="btn btn-secondary" id="export-btn">Export Data</button>
+        <button class="btn btn-secondary" id="import-btn">Import Data</button>
+      </div>
+      <input type="file" class="file-input" id="import-file" accept=".json">
+      <div class="status" id="status"></div>
+      <div class="info">
+        <strong>Note:</strong> Importing will replace your current data. Make sure to export first if you want to keep your current library.
+      </div>
+    </div>
+
+    <!-- About -->
+    <div class="section">
+      <h2>About</h2>
+      <div class="info">
+        <strong>Raw Notification Center</strong> v1.0.0<br>
+        Track manga updates from rawkuma.net<br><br>
+        <strong>How to use:</strong><br>
+        1. Visit a manga page on rawkuma.net<br>
+        2. Click the "Track Updates" button<br>
+        3. New chapters will be shown in the popup
+      </div>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
