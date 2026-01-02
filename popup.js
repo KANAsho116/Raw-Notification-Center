@@ -99,7 +99,10 @@ function switchTab(tabName) {
   });
 
   elements.tabContents.forEach(content => {
-    content.classList.toggle('active', content.id === `${tabName}-tab`);
+    const isActive = content.id === `${tabName}-tab`;
+    content.classList.toggle('active', isActive);
+    // Remove 'hidden' class when active, add when inactive
+    content.classList.toggle('hidden', !isActive);
   });
 
   renderCurrentTab();
