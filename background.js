@@ -136,18 +136,18 @@ async function fetchMangaInfo(url) {
   let latestChapterNum = 0;
   let latestChapterUrl = '';
 
-  // Find chapter links - URL format: /chapter-NUMBER.ID/
-  const chapterLinkMatch = html.match(/<a[^>]+href=["']([^"']*\/chapter-(\d+(?:\.\d+)?)[^"']*)["'][^>]*>/i);
+  // Find chapter links - URL format: /chapter-NUMBER.ID/ (e.g., chapter-185.12345/)
+  const chapterLinkMatch = html.match(/<a[^>]+href=["']([^"']*\/chapter-(\d+)[^"']*)["'][^>]*>/i);
   if (chapterLinkMatch) {
     latestChapterUrl = chapterLinkMatch[1].trim();
     if (!latestChapterUrl.startsWith('http')) {
       latestChapterUrl = new URL(latestChapterUrl, url).href;
     }
 
-    // Extract chapter number from URL (chapter-NUMBER.ID format)
-    const chapterNumMatch = latestChapterUrl.match(/\/chapter-(\d+(?:\.\d+)?)/i);
+    // Extract chapter number from URL - only the integer before the dot
+    const chapterNumMatch = latestChapterUrl.match(/\/chapter-(\d+)/i);
     if (chapterNumMatch) {
-      latestChapterNum = parseFloat(chapterNumMatch[1]);
+      latestChapterNum = parseInt(chapterNumMatch[1], 10);
       latestChapter = `Chapter ${chapterNumMatch[1]}`;
     }
   }

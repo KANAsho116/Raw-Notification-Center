@@ -70,10 +70,11 @@
       const firstChapterLink = chapterLinks[0];
       latestChapterUrl = firstChapterLink.href;
 
-      // Extract chapter number from URL (format: /chapter-NUMBER.ID/)
-      const chapterNumMatch = latestChapterUrl.match(/\/chapter-(\d+(?:\.\d+)?)/i);
+      // Extract chapter number from URL - only the integer before the dot
+      // URL format: /chapter-NUMBER.ID/ (e.g., chapter-185.12345/)
+      const chapterNumMatch = latestChapterUrl.match(/\/chapter-(\d+)/i);
       if (chapterNumMatch) {
-        latestChapterNum = parseFloat(chapterNumMatch[1]);
+        latestChapterNum = parseInt(chapterNumMatch[1], 10);
         latestChapter = `Chapter ${chapterNumMatch[1]}`;
       }
     }
