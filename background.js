@@ -310,11 +310,15 @@ async function setupAlarm() {
 // ============= Message Handlers =============
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log('Background received message:', message.type, message);
+
   (async () => {
     try {
       switch (message.type) {
         case 'REGISTER_MANGA':
+          console.log('Registering manga:', message.manga?.title);
           await saveManga(message.manga);
+          console.log('Manga saved successfully');
           sendResponse({ success: true });
           break;
 
@@ -331,6 +335,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         case 'GET_MANGAS':
           const mangas = await getMangas();
+          console.log('GET_MANGAS returning:', Object.keys(mangas).length, 'mangas');
           sendResponse({ mangas });
           break;
 

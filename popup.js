@@ -28,9 +28,23 @@ let updates = [];
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
+  console.log('Popup init started');
   setupEventListeners();
+
+  // Show loading state
+  if (elements.loading) {
+    elements.loading.classList.remove('hidden');
+  }
+
   await loadData();
+
+  // Hide loading state
+  if (elements.loading) {
+    elements.loading.classList.add('hidden');
+  }
+
   renderCurrentTab();
+  console.log('Popup init completed');
 }
 
 function setupEventListeners() {
@@ -56,16 +70,22 @@ function setupEventListeners() {
 // ============= Data Loading =============
 
 async function loadData() {
-  try {
-    const [mangasResponse, updatesResponse] = await Promise.all([
-      chrome.runtime.sendMessage({ type: 'GET_MANGAS' }),
-      chrome.runtime.sendMessage({ type: 'GET_UPDATES' })
-    ]);
+  console.log('loadData started');
 
-    mangas = mangasResponse.mangas || {};
-    updates = updatesResponse.updates || [];
+  // Read directly from chrome.storage.local for reliability
+  try {
+    const result = await chrome.storage.local.get(['mangas', 'updates']);
+    console.log('Storage result:', result);
+
+    mangas = result.mangas || {};
+    updates = result.updates || [];
+
+    console.log('Loaded mangas:', Object.keys(mangas).length, mangas);
+    console.log('Loaded updates:', updates.length);
   } catch (error) {
-    console.error('Failed to load data:', error);
+    console.error('Failed to load data from storage:', error);
+    mangas = {};
+    updates = [];
   }
 }
 
@@ -171,10 +191,14 @@ function createUpdateItem(update) {
 // ============= Library Tab =============
 
 function renderLibrary() {
+  console.log('renderLibrary called, mangas object:', mangas);
+  console.log('mangas keys:', Object.keys(mangas));
+
   const filter = elements.filterSelect.value;
   const sort = elements.sortSelect.value;
 
   let mangaList = Object.values(mangas);
+  console.log('mangaList length:', mangaList.length);
 
   // Filter
   if (filter === 'unread') {
