@@ -191,14 +191,19 @@ function createUpdateItem(update) {
 // ============= Library Tab =============
 
 function renderLibrary() {
-  console.log('renderLibrary called, mangas object:', mangas);
+  console.log('=== renderLibrary START ===');
+  console.log('mangas object:', JSON.stringify(mangas, null, 2));
   console.log('mangas keys:', Object.keys(mangas));
+  console.log('elements.libraryList:', elements.libraryList);
+  console.log('elements.libraryEmpty:', elements.libraryEmpty);
 
   const filter = elements.filterSelect.value;
   const sort = elements.sortSelect.value;
+  console.log('filter:', filter, 'sort:', sort);
 
   let mangaList = Object.values(mangas);
   console.log('mangaList length:', mangaList.length);
+  console.log('mangaList:', mangaList);
 
   // Filter
   if (filter === 'unread') {
@@ -220,12 +225,17 @@ function renderLibrary() {
   });
 
   // Render
+  console.log('Rendering mangaList.length:', mangaList.length);
   if (mangaList.length === 0) {
+    console.log('No manga to display, showing empty state');
     elements.libraryList.innerHTML = '';
     elements.libraryEmpty.classList.remove('hidden');
   } else {
+    console.log('Rendering manga items');
     elements.libraryEmpty.classList.add('hidden');
-    elements.libraryList.innerHTML = mangaList.map(manga => createLibraryItem(manga)).join('');
+    const htmlContent = mangaList.map(manga => createLibraryItem(manga)).join('');
+    console.log('Generated HTML length:', htmlContent.length);
+    elements.libraryList.innerHTML = htmlContent;
 
     // Add event listeners
     elements.libraryList.querySelectorAll('.manga-item').forEach(item => {

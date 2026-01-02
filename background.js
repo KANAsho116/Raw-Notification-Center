@@ -111,53 +111,52 @@ async function fetchMangaInfo(url) {
   }
 
   const html = await response.text();
-  const doc = new DOMParser().parseFromString(html, 'text/html');
 
   // Extract manga slug from URL
-  const match = url.match(/\/manga\/([^\/]+)\/?$/);
-  const slug = match ? match[1] : '';
+  const slugMatch = url.match(/\/manga\/([^\/]+)\/?$/);
+  const slug = slugMatch ? slugMatch[1] : '';
 
-  // Title
-  const titleEl = doc.querySelector('article h4');
-  const title = titleEl?.textContent?.trim() || 'Unknown';
+  // Title - extract from <article> section, look for <h4> tag
+  let title = 'Unknown';
+  const titleMatch = html.match(/<article[^>]*>[\s\S]*?<h4[^>]*>([^<]+)<\/h4>/i);
+  if (titleMatch) {
+    title = titleMatch[1].trim();
+  }
 
-  // Thumbnail
-  const thumbnailEl = doc.querySelector('article img[alt]');
-  const thumbnail = thumbnailEl?.src || '';
+  // Thumbnail - extract first img src in article
+  let thumbnail = '';
+  const thumbMatch = html.match(/<article[^>]*>[\s\S]*?<img[^>]+src=["']([^"']+)["'][^>]*>/i);
+  if (thumbMatch) {
+    thumbnail = thumbMatch[1];
+  }
 
-  // Latest chapter
-  const chapterLinks = doc.querySelectorAll('a[href*="/chapter-"]');
+  // Latest chapter - find first chapter link and extract chapter text
   let latestChapter = '';
   let latestChapterNum = 0;
   let latestChapterUrl = '';
 
-  if (chapterLinks.length > 0) {
-    const firstChapterLink = chapterLinks[0];
-    latestChapterUrl = firstChapterLink.href;
-
-    const spans = firstChapterLink.querySelectorAll('span, div');
-    for (const span of spans) {
-      const text = span.textContent?.trim();
-      if (text && text.match(/Chapter\s+\d/i)) {
-        latestChapter = text;
-        break;
-      }
+  // Find chapter links
+  const chapterLinkMatch = html.match(/<a[^>]+href=["']([^"']*\/chapter-[^"']*)["'][^>]*>([\s\S]*?)<\/a>/i);
+  if (chapterLinkMatch) {
+    latestChapterUrl = chapterLinkMatch[1];
+    if (!latestChapterUrl.startsWith('http')) {
+      latestChapterUrl = new URL(latestChapterUrl, url).href;
     }
 
-    latestChapterNum = extractChapterNumber(latestChapter);
+    // Extract chapter text from inside the link
+    const linkContent = chapterLinkMatch[2];
+    const chapterTextMatch = linkContent.match(/Chapter\s+(\d+(?:\.\d+)?)/i);
+    if (chapterTextMatch) {
+      latestChapter = `Chapter ${chapterTextMatch[1]}`;
+      latestChapterNum = parseFloat(chapterTextMatch[1]);
+    }
   }
 
-  // Last updated
+  // Last updated - look for "Last Updates" text followed by date
   let lastUpdated = '';
-  const allElements = doc.querySelectorAll('*');
-  for (const el of allElements) {
-    if (el.textContent?.trim() === 'Last Updates') {
-      const nextEl = el.nextElementSibling;
-      if (nextEl) {
-        lastUpdated = nextEl.textContent?.trim() || '';
-        break;
-      }
-    }
+  const lastUpdatedMatch = html.match(/Last\s+Updates?\s*<\/[^>]+>\s*<[^>]+>([^<]+)</i);
+  if (lastUpdatedMatch) {
+    lastUpdated = lastUpdatedMatch[1].trim();
   }
 
   return {
