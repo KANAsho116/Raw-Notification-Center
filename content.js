@@ -49,15 +49,18 @@
    * Extract manga info from the current page
    */
   function extractMangaInfo() {
-    // Title
-    const titleEl = document.querySelector('article h4');
-    const title = titleEl?.textContent?.trim() || 'Unknown';
+    // Title - extract from <title> tag (format: "Manga Name - Rawkuma")
+    let title = 'Unknown';
+    const titleEl = document.querySelector('title');
+    if (titleEl) {
+      title = titleEl.textContent.replace(/\s*-\s*Rawkuma\s*$/i, '').trim();
+    }
 
     // Thumbnail
     const thumbnailEl = document.querySelector('article img[alt]');
     const thumbnail = thumbnailEl?.src || '';
 
-    // Latest chapter
+    // Latest chapter - extract from first chapter link URL
     const chapterLinks = document.querySelectorAll('a[href*="/chapter-"]');
     let latestChapter = '';
     let latestChapterNum = 0;
@@ -67,20 +70,11 @@
       const firstChapterLink = chapterLinks[0];
       latestChapterUrl = firstChapterLink.href;
 
-      // Find chapter text
-      const spans = firstChapterLink.querySelectorAll('span, div');
-      for (const span of spans) {
-        const text = span.textContent?.trim();
-        if (text && text.match(/Chapter\s+\d/i)) {
-          latestChapter = text;
-          break;
-        }
-      }
-
-      // Extract number
-      if (latestChapter) {
-        const match = latestChapter.match(/(\d+(?:\.\d+)?)/);
-        latestChapterNum = match ? parseFloat(match[1]) : 0;
+      // Extract chapter number from URL (format: /chapter-NUMBER.ID/)
+      const chapterNumMatch = latestChapterUrl.match(/\/chapter-(\d+(?:\.\d+)?)/i);
+      if (chapterNumMatch) {
+        latestChapterNum = parseFloat(chapterNumMatch[1]);
+        latestChapter = `Chapter ${chapterNumMatch[1]}`;
       }
     }
 

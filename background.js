@@ -116,11 +116,12 @@ async function fetchMangaInfo(url) {
   const slugMatch = url.match(/\/manga\/([^\/]+)\/?$/);
   const slug = slugMatch ? slugMatch[1] : '';
 
-  // Title - extract from <article> section, look for <h4> tag
+  // Title - extract from <title> tag (format: "Manga Name - Rawkuma")
   let title = 'Unknown';
-  const titleMatch = html.match(/<article[^>]*>[\s\S]*?<h4[^>]*>([^<]+)<\/h4>/i);
+  const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
   if (titleMatch) {
-    title = titleMatch[1].trim();
+    // Remove " - Rawkuma" suffix
+    title = titleMatch[1].replace(/\s*-\s*Rawkuma\s*$/i, '').trim();
   }
 
   // Thumbnail - extract first img src in article
@@ -130,25 +131,24 @@ async function fetchMangaInfo(url) {
     thumbnail = thumbMatch[1];
   }
 
-  // Latest chapter - find first chapter link and extract chapter text
+  // Latest chapter - find first chapter link and extract chapter number from URL
   let latestChapter = '';
   let latestChapterNum = 0;
   let latestChapterUrl = '';
 
-  // Find chapter links
-  const chapterLinkMatch = html.match(/<a[^>]+href=["']([^"']*\/chapter-[^"']*)["'][^>]*>([\s\S]*?)<\/a>/i);
+  // Find chapter links - URL format: /chapter-NUMBER.ID/
+  const chapterLinkMatch = html.match(/<a[^>]+href=["']([^"']*\/chapter-(\d+(?:\.\d+)?)[^"']*)["'][^>]*>/i);
   if (chapterLinkMatch) {
-    latestChapterUrl = chapterLinkMatch[1];
+    latestChapterUrl = chapterLinkMatch[1].trim();
     if (!latestChapterUrl.startsWith('http')) {
       latestChapterUrl = new URL(latestChapterUrl, url).href;
     }
 
-    // Extract chapter text from inside the link
-    const linkContent = chapterLinkMatch[2];
-    const chapterTextMatch = linkContent.match(/Chapter\s+(\d+(?:\.\d+)?)/i);
-    if (chapterTextMatch) {
-      latestChapter = `Chapter ${chapterTextMatch[1]}`;
-      latestChapterNum = parseFloat(chapterTextMatch[1]);
+    // Extract chapter number from URL (chapter-NUMBER.ID format)
+    const chapterNumMatch = latestChapterUrl.match(/\/chapter-(\d+(?:\.\d+)?)/i);
+    if (chapterNumMatch) {
+      latestChapterNum = parseFloat(chapterNumMatch[1]);
+      latestChapter = `Chapter ${chapterNumMatch[1]}`;
     }
   }
 
